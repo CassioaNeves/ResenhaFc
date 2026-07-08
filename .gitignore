@@ -1,0 +1,13 @@
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+
+.dart_tool/
+.packages
+build/
+*.iml
+.idea/
+pubspec.lock
