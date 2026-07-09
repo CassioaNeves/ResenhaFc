@@ -1,0 +1,46 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: 'URL base da API que o app vai chamar (ex.: http://192.168.0.15:3000/api/v1 — NUNCA localhost/10.0.2.2 para celular físico)'
+        required: true
+        default: 'http://192.168.0.15:3000/api/v1'
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Java (exigido pelo Gradle/Android toolchain)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Gerar a plataforma Android (não commitada no repositório)
+        run: flutter create --platforms=android --org com.resenhaplay .
+
+      - name: Buscar dependências
+        run: flutter pub get
+
+      - name: Analisar o código (mesmo papel do lint do backend)
+        run: flutter analyze
+        continue-on-error: true
+
+      - name: Compilar o APK (debug)
+        run: flutter build apk --debug --dart-define=API_BASE_URL=${{ github.event.inputs.api_base_url || 'http://192.168.0.15:3000/api/v1' }}
+
+      - name: Publicar o APK como artefato do workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: resenha-play-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
